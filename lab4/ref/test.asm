@@ -1,0 +1,30 @@
+ldi $r0 0x0040          #$v0
+ldi $r1 0x0101          #$v1 
+sl $r1 4
+ldi $r2 0x000f          #$v2
+ldi $r3 0x00f0          #$v3
+ldi $r4 0x0000          #$t0
+ldi $r5 0x0010          #$a0
+ldi $r6 0x0005          #$a1
+
+LO: move $r6 $r6        
+brnz EXIT                                       # while $a1 > 0
+
+        subi $r6 1                              # $a1 -= 1
+        ldr $r4 $r6                             # $t0 = Mem[$a0]
+
+        subi $r4 0x0100
+        brnz ELSE                               # if ($t0 > 0100hex)
+                        divi $r0 8              # $v0 /= 8
+                        or $r1 $r1 $r0          # $v3 |= $v2
+                        sti $r5 0x00ff             
+                        sl $r5 8                # Mem[$a0] = FF00hex;
+                        jmp FI
+                ELSE: 
+                        muli $r2 4
+                        xor $r3 $r3 $r2
+                        sti $r5 0x00ff
+        FI: addi $r5 2
+        jmp LO
+
+EXIT: halt

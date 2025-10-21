@@ -1,0 +1,59 @@
+# include <iostring>
+# include <string>
+……
+//Declare Functions
+void funcALU (int ALU_OP, int ALU_A, int ALU_B);
+void Fetch (int memLoc);
+void Decode ( );
+void Execute ( );
+void MemAccess (int ..);
+void WriteBack ();
+void ControlUnit (int …);
+……
+//Variables
+int Memory[512]; //For Memory Array
+int regArray[8]; //For Register File
+……
+// Control Signals
+int MemWrite, MemRead;
+……
+//Others
+……
+int main ( )
+{
+// Clear Memory and Register contents
+……
+//Initialize Memory contents according to the project handout.
+Memory [0] = 1;
+Memory [2] = -1;
+……
+//Read instructions from the input file and store them into memory.
+……
+//Print initial memory and register contents
+……
+// Set PC and execute program by fetching instruction from the memory
+Unit until the program ends. Looping.
+……
+Return 0;
+}
+void funcALU (int ALU_OP, int ALU_A, int ALU_B) {
+……
+}
+void Fetch ( int memLoc) {
+……
+}
+void Decode ( ) {
+……
+}
+void Execute ( ){
+……
+}
+void MemAccess ( int ..) {
+……
+}
+void WriteBack ( ) {
+……
+}
+void ControUnit ( int …) {
+……
+}

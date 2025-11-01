@@ -6,7 +6,8 @@ BRISC assembler code
 James Jenkins 2025
 '''
 
-from logging import log
+from brisc_logging import log
+from common import int_to_bits
 
 import re
 
@@ -21,7 +22,7 @@ opcode_mnemonic_lut = [
         [0b0111, "I", r"sl"],
         [0b1000, "I", r"srl"],
         [0b1001, "I", r"sra"],
-        [0b1010, "R", r"move|ldr|clr|lpc|lnzp|halt"],
+        [0b1010, "R", r"move|ldr|clr|lpc|str|swp|rst|hlt"],
         [0b1011, "I", r"sti"],
         [0b1100, "I", r"ldi"],
         [0b1101, "J", r"save"],
@@ -44,10 +45,12 @@ func_mnemonic_lut = [
 
         [0b000, r"move"],
         [0b001, r"ldr"],
-        [0b010, r"clr"],
-        [0b011, r"lpc"],
-        [0b100, r"lnzp"],
-        [0b111, r"halt"]
+        [0b010, r"str"],
+        [0b011, r"clr"],
+        [0b100, r"lpc"],
+        [0b101, r"swp"],
+        [0b110, r"rst"],
+        [0b111, r"hlt"]
 ]
 
 br_register_lut = [
@@ -60,13 +63,6 @@ br_register_lut = [
         [0b110, r"brnz"],
         [0b111, r"brnzp"]
 ]
-
-def int_to_bin(n, bits):
-        '''Helper function to create a bit string of required length from an integer.'''
-        if n < 0:
-                n = (1 << bits) + n
-
-        return format(n, f'0{bits}b')
 
 def format_program_text(text):
         ''' Formats program text to easily-parseable lines, and removes comments and whitespace'''
@@ -107,7 +103,7 @@ def first_pass_translate(text):
                 # Match the mnemonic to an instruction in the LUT
                 for index, row in enumerate(opcode_mnemonic_lut):
                         if re.match(row[2], line_fields[0]):
-                                line_translation.append(int_to_bin(row[0], 4)) # Append the opcode to the translation
+                                line_translation.append(int_to_bits(row[0], 4)) # Append the opcode to the translation
                                 instruction_type = row[1]
                                 break
 
@@ -136,7 +132,7 @@ def translate_r_type(line_fields, line_translation):
         count = 0
         for field in line_fields[1:]:
                 # For each field, check for a register id and append the bit string to the translation
-                line_translation.append(int_to_bin(int(re.match(r"\$r(\d+)", field).group(1)), 3))
+                line_translation.append(int_to_bits(int(re.match(r"\$r(\d+)", field).group(1)), 3))
                 count += 1
 
         for i in range(3 - count):
@@ -145,7 +141,7 @@ def translate_r_type(line_fields, line_translation):
         # Find the Func field mapping for the mnemonic
         for mapping in func_mnemonic_lut:
                 if re.match(mapping[1], line_fields[0]):
-                        line_translation.append(int_to_bin(mapping[0], 3))
+                        line_translation.append(int_to_bits(mapping[0], 3))
 
 def translate_i_type(line_fields, line_translation):
         # If branch, evaluate nzp flags and label. Otherwise, load rs and imm fields into translation
@@ -157,11 +153,11 @@ def translate_i_type(line_fields, line_translation):
                         rs += 2
                 if line_fields[0].find("p") != -1:
                         rs += 1
-                line_translation.append(int_to_bin(rs, 3))
+                line_translation.append(int_to_bits(rs, 3))
                 line_translation.append(line_fields[1])
         else:
-                line_translation.append(int_to_bin(int(re.match(r"\$r(\d+)", line_fields[1]).group(1)), 3))
-                line_translation.append(int_to_bin(int(line_fields[2], 0), 9))
+                line_translation.append(int_to_bits(int(re.match(r"\$r(\d+)", line_fields[1]).group(1)), 3))
+                line_translation.append(int_to_bits(int(line_fields[2], 0), 9))
 
 def translate_j_type(line_fields, line_translation):
         line_translation.append(line_fields[1])
@@ -178,9 +174,9 @@ def link_labels(table, label_lut):
                                 if label_mapping[1] == translation[-1]:
                                         target_line = label_mapping[0]
                         if len(translation) == 3:
-                                translation[-1] = int_to_bin(2 * (target_line - (line_number + 1)), 9)
+                                translation[-1] = int_to_bits(2 * (target_line - (line_number + 1)), 9)
                         else:
-                                translation[-1] = int_to_bin(2 * (target_line - (line_number + 1)), 12)
+                                translation[-1] = int_to_bits(2 * (target_line - (line_number + 1)), 12)
 
 def merge_and_check_binary(table):
         binary = ""
@@ -218,3 +214,5 @@ def assemble(program_text):
                         instruction = binary_string[i * 16:i * 16 + 16]
 
                         file.write(f"{hex(int(instruction, 2))}: {instruction}\n")
+
+        return binary_string

@@ -15,16 +15,17 @@ brnz EXIT                                       # while $a1 > 0
 
         subi $r4 0x0100
         brnz ELSE                               # if ($t0 > 0100hex)
-                        divi $r0 8              # $v0 /= 8
+                        sra $r0 3              # $v0 /= 8
                         or $r1 $r1 $r0          # $v3 |= $v2
-                        sti $r5 0x00ff             
-                        sl $r5 8                # Mem[$a0] = FF00hex;
+                        ldi $r7 0x00ff
+                        sl $r7 8
+                        str $r5 $r7             # Mem[$a0] = FF00hex;
                         jmp FI
                 ELSE: 
-                        muli $r2 4
+                        sl $r2 2
                         xor $r3 $r3 $r2
                         sti $r5 0x00ff
         FI: addi $r5 2
         jmp LO
 
-EXIT: halt
+EXIT: hlt

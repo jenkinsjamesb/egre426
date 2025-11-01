@@ -31,7 +31,7 @@ def log(text, level=None):
 
                 logstring = f"[{timestamp}] [{level}] [{filename}] {text}"
 
-                logstring = logstring.replace("\n", "\n|\t") + "\n"
+                logstring = logstring.replace("\n", "\n | -->\t") + "\n"
 
                 logfile.write(logstring)
 

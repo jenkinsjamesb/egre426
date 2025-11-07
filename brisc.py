@@ -1,7 +1,7 @@
 '''
 brisc.py
 
-BRISC (Brad's RISC) top level file
+BRISC (Brad's RISC) top level file for sample program runs
 
 James Jenkins 2025
 '''
@@ -17,10 +17,6 @@ from simulator import processor
 def get_asm_from_file(filename):
         with open(filename, "r") as file:
                 return file.read()
-
-# Functions to set initial machine state and begin simulation
-def simulate():
-        pass
 
 def main():
         init_log(logfile="log/assembly.log", quiet = True)

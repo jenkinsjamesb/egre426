@@ -46,29 +46,38 @@ class processor:
                 self.jmp = bitarray(12)
                 self.result = bitarray(16)
 
+                self.controls = {
+                        "write_dst_reg": False,
+                        "write_dst_mem": False,
+                        "write_src_reg": False,
+                        "write_src_imm": False,
+                }
+
                 # Other vars
                 self.run = True
                 self.cycle = 0
 
         def alu(self, op, a, b):
-                '''ALU functionality.'''
+                '''ALU functionality. Decode operation from relevant field(s) and set ALU result bus. All ALU ops set NZP.'''
                 result = bitarray(16)
 
+                # FIXME for certain I types b_signed should be false maybe idk if this is a good idea in retrospect
+
                 # add
-                if op in (bitarray("0001000"), bitarray("0011")):
-                        result = ba_math("+", a, b, a_signed=True, b_signed=True)
+                if op in (bitarray("0001000"), bitarray("0011000")):
+                        result = processor.ba_math("+", a, b, a_signed=True, b_signed=True)
                 # sub
-                if op in (bitarray("0001001"), bitarray("0100")):
-                        result = ba_math("-", a, b, a_signed=True, b_signed=True)
+                if op in (bitarray("0001001"), bitarray("0100000")):
+                        result = processor.ba_math("-", a, b, a_signed=True, b_signed=True)
                 # mult
-                if op in (bitarray("0001010"), bitarray("0101")):
-                        result = ba_math("*", a, b, a_signed=True, b_signed=True)
+                if op in (bitarray("0001010"), bitarray("0101000")):
+                        result = processor.ba_math("*", a, b, a_signed=True, b_signed=True)
                 # div
-                if op in (bitarray("0001011"), bitarray("0110")):
-                        result = ba_math("/", a, b, a_signed=True, b_signed=True)
+                if op in (bitarray("0001011"), bitarray("0110000")):
+                        result = processor.a_math("/", a, b, a_signed=True, b_signed=True)
                 # twos
                 if op == bitarray("0001100"):
-                        result = ba_math("*", a, -1, b_signed=True)
+                        result = processor.ba_math("*", a, -1, b_signed=True)
 
                 # NOT     
                 if op == bitarray("0010000"):
@@ -87,44 +96,94 @@ class processor:
                         result = ~(a | b)
                         
                 # sl
-                if op == bitarray("0111"):
+                if op == bitarray("0111000"):
                         result = a << ba2int(b)
                 # srl
-                if op == bitarray("1000"):
+                if op == bitarray("1000000"):
                         result = a >> ba2int(b)
                 # sra
-                if op == bitarray("1001"):
+                if op == bitarray("1001000"):
                         a_shift = a >> ba2int(b)
                         a_shift[0:ba2int(b)] = a_shift[ba2int(b)]
                         result = a_shift
 
                 # Set NZP registers
-                if ba2int(result, signed=True) == 0:
-                        self.nzp = bitarray("010")
-                if ba2int(result, signed=True) < 0:
-                        self.nzp = bitarray("100")
-                if ba2int(result, signed=True) > 0:
-                        self.nzp = bitarray("001")
+                self.set_nzp(result)
 
                 # Main alu output
                 self.result = result
 
+        def set_controls(self):
+                '''Sets processor control signals.'''
+                for signal in self.controls:
+                        self.controls[signal] = False
+
+                # All ALU instructions write to register
+                if self.opcode in (bitarray("0001"), bitarray("0010"), bitarray("0011"), bitarray("0100"), bitarray("0101"), bitarray("0110"), bitarray("0111"), bitarray("1000"), bitarray("1001")):
+                        self.controls["write_dst_reg"] = True
+
+                # The GP 1010 instruction has to be parsed by func
+                if self.opcode == bitarray("1010"):
+                        # move | copy rt to rs
+                        if self.func in (bitarray("000"), bitarray("001"), bitarray("011"), bitarray("100")):
+                                self.controls["write_dst_reg"] = True
+
+                        # str | store rt at mem[rs]
+                        if self.func == bitarray("010"):
+                                self.controls["write_dst_mem"] = True
+                                self.controls["write_src_reg"] = True
+
+                # Store immediate mem[rs] = sext(imm)
+                if self.opcode == bitarray("1011"):
+                        self.controls["write_dst_mem"] = True
+                        self.controls["write_src_imm"] = True
+
+                # Load immediate rs = sext(imm)
+                if self.opcode == bitarray("1100"):
+                        self.controls["write_dst_reg"] = True
+
+        def set_nzp(self, input):
+                '''Set NZP registers based on input.'''
+                if ba2int(input, signed=True) == 0:
+                        self.nzp = bitarray("010")
+                if ba2int(input, signed=True) < 0:
+                        self.nzp = bitarray("100")
+                if ba2int(input, signed=True) > 0:
+                        self.nzp = bitarray("001")
+
+        def mem_access(self, address, source, num_bytes=16):
+                '''Access up to 16 bytes of memory at byte address.'''
+                int_address = address
+
+                if type(address) == bitarray:
+                        int_address = ba2int(address)
+
+                bit_address = int_address * 8
+                return source[bit_address:bit_address + 8 * num_bytes]
+
+        def write_back(self, write_input):
+                '''Performs write back with control signals and input.'''
+                if self.controls["write_dst_reg"]:
+                        self.register_file[ba2int(self.ir[4:7])] = write_input
+
+                if self.controls["write_dst_mem"]:
+                        if self.controls["write_src_reg"]:
+                                self.data_memory[processor.ba_math("*", self.rt, 8, ret_int=True):] = write_input
+
+                        if self.controls["write_src_imm"]:
+                                self.data_memory[processor.ba_math("*", self.rs, 8, ret_int=True):] = write_input
+                                
         def fetch(self):
                 '''Processor fetch stage.'''
-                # Convert PC bits to int, fetch bytes and inc. PC, then convert back to bits.
-
-                bit_address = processor.ba_math("*", self.pc, 8, ret_int=True)
-
-                self.pc_increment(2)
+                # Fetch 2 bytes from text memory and inc. PC
+                self.ir = self.mem_access(self.pc, self.text_memory, 2)
+                self.pc = processor.ba_math("+", self.pc, 2)
                 
-                self.ir = self.text_memory[bit_address:bit_address + 16]
-
                 log(f"Cycle {self.cycle} instruction = {self.ir}")
                 self.cycle += 1
-                
 
         def decode(self):
-                '''Processor decode stage.'''
+                '''Processor decode stage. Separates instruction register into the various fields. Sets control signals.'''
                 self.opcode = self.ir[0:4]
                 self.rs = self.register_file[ba2int(self.ir[4:7])]
                 self.rt = self.register_file[ba2int(self.ir[7:10])]
@@ -133,41 +192,78 @@ class processor:
                 self.imm = self.ir[7:16]
                 self.jmp = self.ir[4:16]
 
+                self.set_controls()
+
         def execute(self):
                 '''Processor execute stage.'''
+                exec_output = bitarray(16)
 
                 # Branch/NOP
                 if self.opcode == bitarray("0000"):
                         if (self.ir[4:7][0] & self.nzp[0]) or (self.ir[4:7][1] & self.nzp[1]) or (self.ir[4:7][2] & self.nzp[2]):
-                                self.pc = processor.ba_math("+", self.pc, self.imm, b_signed=True)
+                                self.pc = processor.ba_math("+", self.pc, self.imm, b_signed=True) 
 
                 # R-type ALU instructions
                 if self.opcode in (bitarray("0001"), bitarray("0010")):
                         self.alu(self.opcode + self.func, self.rt, self.rd)
+                        exec_output = self.result
 
                 # I-type ALU instructions
                 if self.opcode in (bitarray("0011"), bitarray("0100"), bitarray("0101"), bitarray("0110"), bitarray("0111"), bitarray("1000"), bitarray("1001")):
-                        self.alu(self.opcode, self.rs, self.imm)
+                        self.alu(self.opcode + bitarray(3), self.rs, self.imm)
+                        exec_output = self.result
 
                 # R-type GP data control instruction
                 if self.opcode == bitarray("1010"):
-                        # HLT
+                        # move | copy rt to rs
+                        if self.func == bitarray("000"):
+                                exec_output = self.rt
+                                # Set NZP registers
+                                self.set_nzp(self.rt)
+
+                        # ldr | load mem[rt] to rs
+                        if self.func == bitarray("001"):
+                                base_address = processor.ba_math("*", self.rt, 8, ret_int=True)
+                                exec_output = self.data_memory[base_address:(base_address + 16)]
+
+                        # str | store rt at mem[rs]
+                        if self.func == bitarray("010"):
+                                exec_output = self.rt
+
+                        # clr | zero register
+                        if self.func == bitarray("011"):
+                                exec_output = bitarray(16)
+
+                        # lpc | load pc into rs
+                        if self.func == bitarray("100"):
+                                exec_output = self.pc
+
+                        # swp | swap two registers
+                        if self.func == bitarray("101"):
+                                self.register_file[ba2int(self.ir[4:7])] = self.rt
+                                self.register_file[ba2int(self.ir[7:10])] = self.rs
+
+                        # rst | reset pc to 0
+                        if self.func == bitarray("110"):
+                                self.pc = bitarray(16)
+
+                        # hlt | halt machine
                         if self.func == bitarray("111"):
                                 self.run = False
 
                 # Store immediate mem[rs] = sext(imm)
                 if self.opcode == bitarray("1011"):
-                        data_mem[processor.ba_math("*", self.rs, 8)] = bitarray(int_to_bits(ba2int(self.imm, signed=True), 16))
+                        exec_output = bitarray(int_to_bits(ba2int(self.imm, signed=True), 16))
 
                 # Load immediate rs = sext(imm)
                 if self.opcode == bitarray("1100"):
-                        self.register_file[ba2int(self.ir[4:7])] = bitarray(int_to_bits(ba2int(self.imm, signed=True), 16))
+                        exec_output = bitarray(int_to_bits(ba2int(self.imm, signed=True), 16))
 
                 # Register save to mem[pc + sext(imm)] (J-type)
                 if self.opcode == bitarray("1101"):
                         bit_offset = processor.ba_math("*", self.jmp, 8, a_signed=True)
                         base_address = processor.ba_math("+", self.pc, bit_offset, b_signed=True, ret_int=True)
-                        data_mem[base_address:base_address + 8*16] = self.register_file[0] + self.register_file[1] + self.register_file[2] + self.register_file[3] + self.register_file[4] + self.register_file[5] + self.register_file[6] + self.register_file[7]
+                        self.data_memory[base_address:base_address + 8*16] = self.register_file[0] + self.register_file[1] + self.register_file[2] + self.register_file[3] + self.register_file[4] + self.register_file[5] + self.register_file[6] + self.register_file[7]
 
                 # Register restore from mem[pc + sext(imm)] (J-type)
                 if self.opcode == bitarray("1110"):
@@ -175,29 +271,17 @@ class processor:
                         base_address = processor.ba_math("+", self.pc, bit_offset, b_signed=True, ret_int=True)
 
                         for i in range(0, 7):
-                                self.register_file[i] = data_mem[base_address + 16 * i]
+                                self.register_file[i] = self.data_mem[base_address + 16 * i:base_address + 16 * i + 16]
 
                 # Jump unconditionally to pc + sext(imm) (J-type)
                 if self.opcode == bitarray("1111"):
-                        bit_offset = processor.ba_math("*", self.jmp, 8, a_signed=True)
-                        self.pc = processor.ba_math("+", self.pc, bit_offset, b_signed=True)
+                        self.pc = processor.ba_math("+", self.pc, self.jmp, b_signed=True)
 
-                        
-        # Make static?
-        def pc_increment(self, offset):
-                pc_int = ba2int(self.pc)
-
-                if type(offset) is int:
-                        pc_int += offset
-
-                if type(offset) is bitarray:
-                        pc_int += ba2int(offset, signed=True)
-
-                self.pc = bitarray(int_to_bits(pc_int, 16))
-
+                self.write_back(exec_output)
 
         @staticmethod
         def ba_math(op, a, b, a_signed=False, b_signed=False, ret_int=False):
+                '''Helper function for bitarray and integer math.'''
                 a_int = a
                 b_int = b
                 result = 0
@@ -217,14 +301,18 @@ class processor:
                                 result = a_int * b_int
                         case "/":
                                 result = a_int / b_int
-
                 if ret_int:
                         return result
                 else:
                         return bitarray(int_to_bits(result, 16))
 
+        def step(self):
+                '''Step one instruction forward.'''
+                self.fetch()
+                self.decode()
+                self.execute()
+
         def start(self):
+                '''Run the processor.'''
                 while self.run:
-                        self.fetch()
-                        self.decode()
-                        self.execute()
+                        self.step()

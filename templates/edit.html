@@ -1,0 +1,14 @@
+<head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+        <div id="container">
+                <form action="/edit" method="post">
+                        <textarea name="program_text" rows=48 cols=128>{{ program_text }}</textarea>
+                        <input type="submit" value="Assemble!">
+                </form>
+        </div>
+
+
+</body>

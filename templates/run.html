@@ -1,0 +1,28 @@
+<head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+        <div id="container">
+                <div id="formatted_text">
+                        <!--show formatted text lines, highlight current-->
+                        {{ formmated_text }}
+                </div>
+
+                <div id="binary">
+                        <!--show hex/binary lines, highlight current-->
+                        {{ binary_string }}
+                </div>
+
+                <div id="registers"></div>
+
+                <div id="memory"></div>
+
+                <form action="/edit" method="post">
+                        
+                        <input type="submit" value="Run">
+                </form>
+        </div>
+
+
+</body>

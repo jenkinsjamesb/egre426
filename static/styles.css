@@ -1,3 +1,42 @@
 body {
         background-color: #333;
+        color: #fff
+}
+
+#header {
+        display: flex;
+        flex-direction: row;
+}
+
+#header > * {
+        margin-right: 20px;
+}
+
+#header > a {
+        color: #fff;
+}
+
+#container {
+        display: flex;
+        flex-direction: row;
+}
+
+#program_display {
+        display: flex;
+        flex-direction: row;
+}
+
+#program_display > * {
+        display: flex;
+        flex-direction: column;
+        margin-right: 20px;
+        font-family: monospace;
+        min-width: 25vw;
+}
+
+.highlight{
+        display: inline-block;
+        padding: .25em 0;
+        background: #ff0;
+        color: #000;
 }

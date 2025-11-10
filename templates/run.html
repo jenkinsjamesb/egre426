@@ -3,26 +3,36 @@
 </head>
 
 <body>
-        <div id="container">
-                <div id="formatted_text">
-                        <!--show formatted text lines, highlight current-->
-                        {{ formmated_text }}
-                </div>
+        <div id="header">
+                <a href="/edit">Back to editor</a>
+                <a href="/run">Reset</a>
 
-                <div id="binary">
-                        <!--show hex/binary lines, highlight current-->
-                        {{ binary_string }}
-                </div>
-
-                <div id="registers"></div>
-
-                <div id="memory"></div>
-
-                <form action="/edit" method="post">
-                        
-                        <input type="submit" value="Run">
+                <form action="/run" method="post">
+                        <label for="continue_run">Step until halt?</label>
+                        <input type="checkbox" name="continue_run" {{ ctx["continue_run"] }}> <!--gotta get this working--> 
+                        <input type="submit" value="Step!">
                 </form>
+
+                <div id="cycle">Cycle: {{ ctx["processor"].cycle }}</div>
         </div>
 
+        <div id="container">
+                <div id="program_display">
+                        <div id="text">
+                                <!--show formatted text lines, highlight current-->
+                                {{ ctx["formatted_text"] | safe }}
+                        </div>
 
+                        <div id="binary">
+                                <!--show hex/binary lines, highlight current-->
+                                {{ ctx["formatted_binary"] | safe }}
+                        </div>
+                </div>
+
+                <div id="memory_display">
+                        <div id="registers">Registers: {{ ctx["processor"].register_file }}</div>
+                        <div id="text_memory">{{ ctx["processor"].text_memory }}</div>
+                        <div id="data_memory">{{ ctx["processor"].data_memory }}</div>
+                </div>
+        </div>
 </body>

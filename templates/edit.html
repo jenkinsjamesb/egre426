@@ -5,7 +5,7 @@
 <body>
         <div id="container">
                 <form action="/edit" method="post">
-                        <textarea name="program_text" rows=48 cols=128>{{ program_text }}</textarea>
+                        <textarea name="program_text" rows=48 cols=128>{{ ctx["program_text"] }}</textarea>
                         <input type="submit" value="Assemble!">
                 </form>
         </div>

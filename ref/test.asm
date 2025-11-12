@@ -11,9 +11,11 @@ LO: move $r6 $r6
 brnz EXIT                                       # while $a1 > 0
 
         subi $r6 1                              # $a1 -= 1
-        ldr $r4 $r6                             # $t0 = Mem[$a0]
+        ldr $r4 $r5                             # $t0 = Mem[$a0]
 
-        subi $r4 0x0100
+        ldi $r7 0x0010
+        sl $r7 4
+        subr $r4 $r4 $r7
         brnz ELSE                               # if ($t0 > 0100hex)
                         sra $r0 3              # $v0 /= 8
                         or $r1 $r1 $r0          # $v3 |= $v2

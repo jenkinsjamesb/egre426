@@ -9,7 +9,7 @@
 
                 <form action="/run" method="post">
                         <label for="continue_run">Step until halt?</label>
-                        <input type="checkbox" name="continue_run" {{ ctx["continue_run"] }}> <!--gotta get this working--> 
+                        <input type="checkbox" name="continue_run">
                         <input type="submit" value="Step!">
                 </form>
 
@@ -30,9 +30,11 @@
                 </div>
 
                 <div id="memory_display">
-                        <div id="registers">Registers: {{ ctx["processor"].register_file }}</div>
-                        <div id="text_memory">{{ ctx["processor"].text_memory }}</div>
-                        <div id="data_memory">{{ ctx["processor"].data_memory }}</div>
+                        <div id="registers">Registers: {{ ctx["formatted_registers"] | safe }}</div>
+                        <div id="large_memory"> 
+                                <div id="text_memory">Text Memory: {{ ctx["formatted_text_memory"] | safe }}</div>
+                                <div id="data_memory">Data Memory: {{ ctx["formatted_data_memory"] | safe }}</div>
+                        </div>
                 </div>
         </div>
 </body>

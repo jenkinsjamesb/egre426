@@ -19,6 +19,7 @@ body {
 #container {
         display: flex;
         flex-direction: row;
+        max-width: 100vw;
 }
 
 #program_display {
@@ -29,9 +30,31 @@ body {
 #program_display > * {
         display: flex;
         flex-direction: column;
-        margin-right: 20px;
+        margin-right: 1vw;
         font-family: monospace;
-        min-width: 25vw;
+        min-width: fit-content;
+        max-width: 25vw;
+        text-wrap: nowrap;
+}
+
+#memory_display {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+}
+
+#memory_display > * {
+        margin-right: 1vw;
+        margin-bottom: 1vw;
+}
+
+#large_memory > * {
+        margin-bottom: 1vw;
+}
+
+#memory_display td {
+        font-family: monospace;
+        text-wrap: nowrap;
 }
 
 .highlight{
@@ -39,4 +62,12 @@ body {
         padding: .25em 0;
         background: #ff0;
         color: #000;
+}
+
+table, th, td {
+        border: 1px solid;
+}
+
+th, td {
+        padding: 5px;
 }

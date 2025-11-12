@@ -13,7 +13,7 @@ from flask import Flask, request, redirect, render_template
 from bitarray import bitarray
 from bitarray.util import ba2int
 from brisc_logging import init_log, log
-from common import int_to_bits, insert_every
+from common import int_to_bits, insert_every, pretty_print_16, format_memory
 from simulator import processor # simulator
 from assembler import assemble, format_program_text # assembler
 
@@ -27,6 +27,10 @@ ctx = {
 
         "formatted_text": "",
         "formatted_binary": "",
+
+        "formatted_registers": "",
+        "formatted_data_memory": "",
+        "formatted_text_memory": "",
 
         "processor": None,
 }
@@ -49,10 +53,11 @@ def route_edit():
                         ctx["binary_string"] = assemble(ctx["program_text"]) # assemble
                         return redirect("/run") # Go to run page
 
-                # if bad, set error value and reload route
+                # If bad, set error value and reload route
                 except Exception as err:
                         ctx["assembly_error"] = err
 
+        # Render the document
         return render_template("edit.html")
 
 @app.route("/run", methods=["GET", "POST"]) 
@@ -65,6 +70,17 @@ def route_run():
                 text_mem[0:len(ctx["binary_string"])] = bitarray(ctx["binary_string"])
 
                 ctx["processor"].text_memory = text_mem
+
+                # FIXME remove after test or add place to init data
+                data_mem = bitarray(256 * 8)
+                data_mem[0x0010 * 8:0x0010 * 8 + 16] = bitarray("0000_0001_0000_0001")
+                data_mem[0x0010 * 8 + 16:0x0010 * 8 + 32] = bitarray("0000_0001_0001_0000")
+                data_mem[0x0010 * 8 + 32:0x0010 * 8 + 48] = bitarray("0000_0000_0001_0001")
+                data_mem[0x0010 * 8 + 48:0x0010 * 8 + 64] = bitarray("0000_0000_1111_0000")
+                data_mem[0x0010 * 8 + 64:0x0010 * 8 + 80] = bitarray("0000_0000_1111_1111")
+                
+                ctx["processor"].data_memory = data_mem
+                # FIXME
         
         # On POST, step or step repeatedly
         if request.method == "POST":
@@ -89,18 +105,27 @@ def route_run():
 
                 # Extract binary instruction, convert to hex, and pretty print
                 instruction = ctx["binary_string"][index * 16:index * 16 + 16] 
-                hex_string = format(int(instruction, 2), f"04x")
+                hex_string = format(int(instruction, 2), f"04x").upper()
                 binary_line = f"0x{hex_string}: {insert_every(instruction, " ", 4)}\n"
 
-                ctx["formatted_binary"] += f"<span{highlight_class}>{binary_line}</span>"
+                ctx["formatted_binary"] += f"<span{highlight_class}>{pretty_print_16(instruction)}</span>"
 
         # Format registers and memory for display. This does need to be done per-cycle unlike the above
+        ctx["formatted_registers"] = "<table>"
+
+        for register_number, register_value in enumerate(ctx["processor"].register_file):
+                ctx["formatted_registers"] += f"<tr><th>$r{register_number}</th><td>{pretty_print_16(register_value)}</td></tr>"
+                
+        ctx["formatted_registers"] += "</table>"
+
+        ctx["formatted_text_memory"] = format_memory(ctx["processor"].text_memory, 8)
+        ctx["formatted_data_memory"] = format_memory(ctx["processor"].data_memory, 8)
         
-        
+        # Render the document
         return render_template("run.html")
 
 def main():
-        app.run(host="0.0.0.0", debug=True)
+        app.run(host="0.0.0.0", debug=True, port=1234)
 
 if __name__ == "__main__":
         main()

@@ -167,11 +167,12 @@ class processor:
                         self.register_file[ba2int(self.ir[4:7])] = write_input
 
                 if self.controls["write_dst_mem"]:
+                        bit_address = processor.ba_math("*", self.rs, 8, ret_int=True)
                         if self.controls["write_src_reg"]:
-                                self.data_memory[processor.ba_math("*", self.rt, 8, ret_int=True):] = write_input
+                                self.data_memory[bit_address:bit_address + 16] = write_input
 
                         if self.controls["write_src_imm"]:
-                                self.data_memory[processor.ba_math("*", self.rs, 8, ret_int=True):] = write_input
+                                self.data_memory[bit_address:bit_address + 16] = write_input
                                 
         def fetch(self):
                 '''Processor fetch stage.'''
@@ -223,8 +224,7 @@ class processor:
 
                         # ldr | load mem[rt] to rs
                         if self.func == bitarray("001"):
-                                base_address = processor.ba_math("*", self.rt, 8, ret_int=True)
-                                exec_output = self.data_memory[base_address:(base_address + 16)]
+                                exec_output = self.mem_access(self.rt, self.data_memory, 2)
 
                         # str | store rt at mem[rs]
                         if self.func == bitarray("010"):

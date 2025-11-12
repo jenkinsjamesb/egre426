@@ -36,10 +36,11 @@ def main():
 
         # Data memory
         data_mem = bitarray(256 * 8)
-        data_mem[0x0010 + 16:] = bitarray("0000_0001_0001_0000")
-        data_mem[0x0010 + 32:] = bitarray("0000_0000_0001_0001")
-        data_mem[0x0010 + 48:] = bitarray("0000_0000_1111_0000")
-        data_mem[0x0010 + 64:] = bitarray("0000_0000_1111_1111")
+        data_mem[0x0010 * 8:0x0010 * 8 + 16] = bitarray("0000_0001_0000_0001")
+        data_mem[0x0010 * 8 + 16:0x0010 * 8 + 32] = bitarray("0000_0001_0001_0000")
+        data_mem[0x0010 * 8 + 32:0x0010 * 8 + 48] = bitarray("0000_0000_0001_0001")
+        data_mem[0x0010 * 8 + 48:0x0010 * 8 + 64] = bitarray("0000_0000_1111_0000")
+        data_mem[0x0010 * 8 + 64:0x0010 * 8 + 80] = bitarray("0000_0000_1111_1111")
 
         proc.data_memory = data_mem
 

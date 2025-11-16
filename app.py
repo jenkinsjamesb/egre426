@@ -13,7 +13,7 @@ from flask import Flask, request, redirect, render_template
 from bitarray import bitarray
 from bitarray.util import ba2int
 from brisc_logging import init_log, log
-from common import int_to_bits, insert_every, pretty_print_16, format_memory
+from common import *
 from simulator import processor # simulator
 from assembler import assemble, format_program_text # assembler
 
@@ -80,7 +80,7 @@ def route_run():
                 data_mem[0x0010 * 8 + 64:0x0010 * 8 + 80] = bitarray("0000_0000_1111_1111")
                 
                 ctx["processor"].data_memory = data_mem
-                # FIXME
+                # FIXME 
         
         # On POST, step or step repeatedly
         if request.method == "POST":
@@ -118,8 +118,13 @@ def route_run():
                 
         ctx["formatted_registers"] += "</table>"
 
-        ctx["formatted_text_memory"] = format_memory(ctx["processor"].text_memory, 8)
-        ctx["formatted_data_memory"] = format_memory(ctx["processor"].data_memory, 8)
+        #ctx["formatted_registers"] = format_registers_report(ctx["processor"].register_file)
+
+        ctx["formatted_data_memory"] = format_memory(ctx["processor"].data_memory, 4)
+        #ctx["formatted_data_memory"] = format_memory_report(ctx["processor"].data_memory)
+
+        ctx["formatted_text_memory"] = format_memory(ctx["processor"].text_memory, 4)
+        #ctx["formatted_text_memory"] = format_memory_report(ctx["processor"].text_memory)
         
         # Render the document
         return render_template("run.html")

@@ -48,8 +48,16 @@ body {
         margin-bottom: 1vw;
 }
 
+#large_memory {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+}
+
+
 #large_memory > * {
         margin-bottom: 1vw;
+        margin-right: 1vw;
 }
 
 #memory_display td {
@@ -70,4 +78,12 @@ table, th, td {
 
 th, td {
         padding: 5px;
+}
+
+tr.report_color > th {
+        background-color: #eeece1;
+}
+
+th {
+        background-color: rgba(255,255,255,0.1);
 }

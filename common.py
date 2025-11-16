@@ -37,9 +37,41 @@ def format_memory(memory, columns):
                 if row_index == 0:
                         string += f"</tr><tr><th>0x{format(int(i / 8), f"04x").upper()}</th>"
 
-                string += f"<td>{pretty_print_16(memory[i:i + 16])}</td>"
+                value = memory[i:i + 16]
+                is_zero = value == bitarray(16)
+                string += f"<td>{"" if is_zero else "<b>"}{pretty_print_16(value)}{"" if is_zero else "</b>"}</td>"
 
         string += "</tr></table>"
 
         return string
 
+
+def format_memory_report(memory):
+        string = "<table><tr class=\"report_color\"><th>Address</th><th>Hex Value</th><th>Binary Value</th></tr>"
+
+        for i in range(0, len(memory), 16):
+                string += f"<tr><th>0x{format(int(i / 8), f"04x").upper()}</th>"
+
+                value = memory[i:i + 16]
+                is_zero = value == bitarray(16)
+                string += f"<td>{"" if is_zero else "<b>"}{pretty_print_16(value)[:6]}{"" if is_zero else "</b>"}</td><td>{"" if is_zero else "<b>"}{pretty_print_16(value)[8:]}{"" if is_zero else "</b>"}</td></tr>"
+
+
+        string += "</table>"
+
+        return string
+
+def format_registers_report(register_file):
+        string = "<table><tr class=\"report_color\"><th>Register</th><th>Hex Value</th><th>Binary Value</th></tr>"
+
+        for i, register in enumerate(register_file):
+                string += f"<tr><th>$r{i}</th>"
+
+                value = register
+                is_zero = value == bitarray(16)
+                string += f"<td>{"" if is_zero else "<b>"}{pretty_print_16(value)[:6]}{"" if is_zero else "</b>"}</td><td>{"" if is_zero else "<b>"}{pretty_print_16(value)[8:]}{"" if is_zero else "</b>"}</td></tr>"
+
+
+        string += "</table>"
+
+        return string

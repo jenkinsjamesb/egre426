@@ -181,7 +181,6 @@ class processor:
                 self.pc = processor.ba_math("+", self.pc, 2)
                 
                 log(f"Cycle {self.cycle} instruction = {self.ir}")
-                self.cycle += 1
 
         def decode(self):
                 '''Processor decode stage. Separates instruction register into the various fields. Sets control signals.'''
@@ -311,6 +310,7 @@ class processor:
                 self.fetch()
                 self.decode()
                 self.execute()
+                self.cycle += 1
 
         def start(self):
                 '''Run the processor.'''

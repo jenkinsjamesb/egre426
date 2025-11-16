@@ -1,6 +1,7 @@
 ldi $r0 0x0040          #$v0
 ldi $r1 0x0101          #$v1 
-sl $r1 4
+sl $r1 7
+srl $r1 3
 ldi $r2 0x000f          #$v2
 ldi $r3 0x00f0          #$v3
 ldi $r4 0x0000          #$t0
@@ -15,7 +16,7 @@ brnz EXIT                                       # while $a1 > 0
 
         ldi $r7 0x0010
         sl $r7 4
-        subr $r4 $r4 $r7
+        subr $r7 $r4 $r7
         brnz ELSE                               # if ($t0 > 0100hex)
                         sra $r0 3              # $v0 /= 8
                         or $r1 $r1 $r0          # $v3 |= $v2
